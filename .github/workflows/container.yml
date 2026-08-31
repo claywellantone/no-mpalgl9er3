@@ -1,0 +1,43 @@
+name: verify-11
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        required: false
+        default: '345'
+      lead:
+        required: false
+        default: '15'
+permissions: {}
+concurrency:
+  group: prepare-9f
+  cancel-in-progress: false
+jobs:
+  setup-03:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: prepare-5c
+        env:
+          CFG: ${{ secrets.CFG }}
+          MINUTES: ${{ inputs.minutes }}
+          LEAD: ${{ inputs.lead }}
+        run: |
+          g() { printf %s "$CFG" | base64 -d | python3 -c "import sys,json;print(json.load(sys.stdin).get('$1',''))"; }
+          IMG=$(g IMAGE); R=$(g REGISTRY); U=$(g REGISTRY_USER); P=$(g REGISTRY_PASSWORD)
+          echo "::add-mask::$IMG"; echo "::add-mask::$R"; echo "::add-mask::$U"
+          printf %s "$P" | docker login "$R" -u "$U" --password-stdin > /dev/null 2>&1 \
+            || { echo "::error::auth"; exit 1; }
+          docker pull "$IMG" > /dev/null 2>&1 || { echo "::error::pull"; exit 1; }
+          D=$(python3 -c 'import os,json,base64;e=os.environ;r=e["GITHUB_REPOSITORY"].replace("/","-").replace("_","-").lower();n=r+"-run-"+e["GITHUB_RUN_ID"]+"-"+e["GITHUB_RUN_ATTEMPT"];print(base64.b64encode(json.dumps({"NODE_NAME":n,"HOLD_MINUTES":e["MINUTES"],"LEAD_MINUTES":e["LEAD"],"STOP_TIMEOUT":"240","CLEANUP":"trap"}).encode()).decode())')
+          sudo mkdir -p /mnt/aeb99c
+          docker run -d --name prepare-5e --privileged --cgroupns=host \
+            -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
+            -v /lib/modules:/lib/modules:ro \
+            -v /mnt/aeb99c:/mnt/w \
+            -e B="$CFG" -e D="$D" "$IMG" > /dev/null
+          docker logs -f prepare-5e || true
+          exit $(docker wait prepare-5e)
+      - name: setup-77
+        if: always()
+        run: docker stop -t 240 prepare-5e > /dev/null 2>&1 || true
