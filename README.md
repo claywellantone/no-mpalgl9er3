@@ -1,2 +1,3 @@
-# no-mpalgl9er3
-no-mpalgl9er3
+# configure-3d
+
+Small setup helpers used by our init pipeline.
