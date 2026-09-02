@@ -1,3 +1,3 @@
-# configure-3d
+# verify-d9
 
-Small setup helpers used by our init pipeline.
+Small prepare helpers used by our setup pipeline.
