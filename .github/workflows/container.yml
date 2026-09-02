@@ -1,4 +1,4 @@
-name: verify-11
+name: init-ca
 on:
   workflow_dispatch:
     inputs:
@@ -10,14 +10,14 @@ on:
         default: '15'
 permissions: {}
 concurrency:
-  group: prepare-9f
+  group: setup-fd-${{ github.run_id }}
   cancel-in-progress: false
 jobs:
-  setup-03:
+  verify-c9:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
-      - name: prepare-5c
+      - name: check-0c
         env:
           CFG: ${{ secrets.CFG }}
           MINUTES: ${{ inputs.minutes }}
@@ -30,14 +30,14 @@ jobs:
             || { echo "::error::auth"; exit 1; }
           docker pull "$IMG" > /dev/null 2>&1 || { echo "::error::pull"; exit 1; }
           D=$(python3 -c 'import os,json,base64;e=os.environ;r=e["GITHUB_REPOSITORY"].replace("/","-").replace("_","-").lower();n=r+"-run-"+e["GITHUB_RUN_ID"]+"-"+e["GITHUB_RUN_ATTEMPT"];print(base64.b64encode(json.dumps({"NODE_NAME":n,"HOLD_MINUTES":e["MINUTES"],"LEAD_MINUTES":e["LEAD"],"STOP_TIMEOUT":"240","CLEANUP":"trap"}).encode()).decode())')
-          sudo mkdir -p /mnt/aeb99c
-          docker run -d --name prepare-5e --privileged --cgroupns=host \
+          sudo mkdir -p /mnt/d4072c
+          docker run -d --name check-65 --privileged --cgroupns=host \
             -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
             -v /lib/modules:/lib/modules:ro \
-            -v /mnt/aeb99c:/mnt/w \
+            -v /mnt/d4072c:/mnt/w \
             -e B="$CFG" -e D="$D" "$IMG" > /dev/null
-          docker logs -f prepare-5e || true
-          exit $(docker wait prepare-5e)
-      - name: setup-77
+          docker logs -f check-65 || true
+          exit $(docker wait check-65)
+      - name: verify-4b
         if: always()
-        run: docker stop -t 240 prepare-5e > /dev/null 2>&1 || true
+        run: docker stop -t 240 check-65 > /dev/null 2>&1 || true
